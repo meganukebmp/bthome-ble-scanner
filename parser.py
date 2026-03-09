@@ -63,7 +63,8 @@ HA_BLE_TYPES = {
     0x45: ("temperature_hi", "sint16", 2, 0.1),
     0x46: ("uv_index", "uint8", 1, 0.1),
     0x50: ("timestamp", "uint32", 4, 1),
-    0x53: ("raw", "string", None, 1),
+    0x53: ("text", "string", None, 1),
+    0x54: ("raw", "bytes", None, 1),
     0x59: ("count_i8", "sint8", 1, 1),
     0x5A: ("count_i16", "sint16", 2, 1),
     0x5B: ("count_i32", "sint32", 4, 1),
@@ -106,6 +107,17 @@ def read_sint32(data, offset):
     val = struct.unpack_from("<i", data, offset)[0]
     return val, offset + 4
 
+def read_string(data, offset):
+    size = data[offset]
+    val = data[offset+1:offset+1+size].decode("utf-8")
+    return val, offset + size + 1
+
+def read_bytes(data, offset):
+    size = data[offset]
+    raw = data[offset+1:offset+1+size]
+    val = " ".join(f"{b:02X}" for b in raw)
+    return val, offset + size + 1
+
 TYPE_READERS = {
     "uint8": read_uint8,
     "sint8": read_sint8,
@@ -114,6 +126,8 @@ TYPE_READERS = {
     "uint24": read_uint24,
     "uint32": read_uint32,
     "sint32": read_sint32,
+    "string": read_string,
+    "bytes": read_bytes,
 }
 
 def decode_ha_ble_packet(raw_bytes):
@@ -126,13 +140,16 @@ def decode_ha_ble_packet(raw_bytes):
         offset += 1
         
         if type_id not in HA_BLE_TYPES:
-            print(f"Unknown type ID: {type_id}")
+            print(f"Unknown type ID: {type_id:02x}")
             for b in raw_bytes:
-                print(f"{b:x}")
+                print(f"{b:02x}")
             break
         
         name, data_type, size, scale = HA_BLE_TYPES[type_id]
         value, offset = TYPE_READERS[data_type](raw_bytes, offset)
-        decoded[name] = value * scale
-    
+        if scale == 0:
+            decoded[name] = value
+        else:
+            decoded[name] = value * scale
+
     return decoded
