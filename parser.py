@@ -70,6 +70,7 @@ HA_BLE_TYPES = {
     0x5B: ("count_i32", "sint32", 4, 1),
     0x5E: ("direction", "uint16", 2, 0.01),
     0x5F: ("precipitation", "uint16", 2, 1),
+    0x64: ("light_level", "uint8", 1, 1),
     0xF0: ("device_type_id", "uint16", 2, 1),
     0xF1: ("fw_version_long", "uint32", 4, 1),
     0xF2: ("fw_version_short", "uint24", 3, 1),
